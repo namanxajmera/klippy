@@ -22,12 +22,14 @@ enum AppEvent {
     UpdateMenu,
     PasteItem(usize),
     ClearAll,
+    OpenGitHub,
     Quit,
 }
 
 #[derive(Default)]
 struct MenuState {
     clear_all: MenuId,
+    github: MenuId,
     quit: MenuId,
     item_ids: HashMap<MenuId, usize>, // menu id -> clipboard item index
 }
@@ -121,6 +123,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Ok(state) = menu_state_clone.lock() {
                 if event.id == state.quit {
                     let _ = menu_proxy.send_event(AppEvent::Quit);
+                } else if event.id == state.github {
+                    let _ = menu_proxy.send_event(AppEvent::OpenGitHub);
                 } else if event.id == state.clear_all {
                     let _ = menu_proxy.send_event(AppEvent::ClearAll);
                 } else if let Some(&index) = state.item_ids.get(&event.id) {
@@ -153,6 +157,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     storage.clear();
                 }
                 rebuild_menu(&mut tray, &storage, &menu_state);
+            }
+            Event::UserEvent(AppEvent::OpenGitHub) => {
+                let _ = std::process::Command::new("open")
+                    .arg("https://github.com/namanxajmera/klippy")
+                    .spawn();
             }
             Event::UserEvent(AppEvent::Quit) => {
                 elwt.exit();
@@ -221,9 +230,13 @@ fn rebuild_menu(
 
         let _ = menu.append(&PredefinedMenuItem::separator());
 
-        // Clear All
-        let clear_item = MenuItem::new("Clear All", true, None);
+        // Clear
+        let clear_item = MenuItem::new("Clear", true, None);
         let _ = menu.append(&clear_item);
+
+        // GitHub - Rate App
+        let github_item = MenuItem::new("Rate App", true, None);
+        let _ = menu.append(&github_item);
 
         // Quit
         let quit_item = MenuItem::new("Quit", true, None);
@@ -232,6 +245,7 @@ fn rebuild_menu(
         // Update menu state IDs
         if let Ok(mut state) = menu_state.lock() {
             state.clear_all = clear_item.id().clone();
+            state.github = github_item.id().clone();
             state.quit = quit_item.id().clone();
         }
     }
