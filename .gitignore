@@ -1,0 +1,19 @@
+# Rust
+/target/
+Cargo.lock
+
+# Build artifacts
+*.app/
+icon.svg
+icon.png
+icon.iconset/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+
+# Claude Code files
+logs/
+.claude/
