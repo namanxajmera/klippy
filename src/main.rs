@@ -146,8 +146,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let items = storage.get_all();
                     if let Some(item) = items.get(index) {
                         // Set clipboard to selected item
-                        if let Ok(mut monitor) = ClipboardMonitor::new() {
-                            let _ = monitor.set_clipboard(&item.content);
+                        match ClipboardMonitor::new() {
+                            Ok(mut monitor) => {
+                                if let Err(e) = monitor.set_clipboard(&item.content) {
+                                    eprintln!("Failed to set clipboard: {}", e);
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to create clipboard monitor: {}", e);
+                            }
                         }
                     }
                 }
@@ -266,6 +273,8 @@ fn format_item_label(item: &storage::ClipboardItem, _index: usize) -> String {
             // Replace newlines with spaces
             preview.replace('\n', " ").replace('\r', " ")
         }
-        ClipboardContent::Image(_) => "[Image]".to_string(),
+        ClipboardContent::Image { width, height, .. } => {
+            format!("[Image {}x{}]", width, height)
+        }
     }
 }
