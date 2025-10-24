@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-const MAX_ITEMS: usize = 50;
+const MAX_ITEMS: usize = 25;
 
 #[derive(Clone, Debug)]
 pub enum ClipboardContent {
