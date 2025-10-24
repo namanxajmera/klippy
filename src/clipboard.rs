@@ -41,7 +41,11 @@ impl ClipboardMonitor {
             if Some(hash) != self.last_image_hash {
                 self.last_image_hash = Some(hash);
                 let rgba_data = image.bytes.to_vec();
-                storage.add(ClipboardContent::Image(rgba_data));
+                storage.add(ClipboardContent::Image {
+                    data: rgba_data,
+                    width: image.width,
+                    height: image.height,
+                });
                 return Ok(());
             }
         }
@@ -55,9 +59,15 @@ impl ClipboardMonitor {
                 self.clipboard.set_text(text)?;
                 self.last_text = Some(text.clone());
             }
-            ClipboardContent::Image(_data) => {
-                // For now, skip image pasting - we'll add this later if needed
-                // Images are complex to paste back correctly
+            ClipboardContent::Image { data, width, height } => {
+                // Create ImageData from stored bytes
+                let image_data = ImageData {
+                    width: *width,
+                    height: *height,
+                    bytes: std::borrow::Cow::Borrowed(data),
+                };
+                self.clipboard.set_image(image_data)?;
+                self.last_image_hash = Some(Self::hash_image_bytes(data));
             }
         }
         Ok(())
@@ -69,6 +79,15 @@ impl ClipboardMonitor {
 
         let mut hasher = DefaultHasher::new();
         image.bytes.hash(&mut hasher);
+        hasher.finish()
+    }
+
+    fn hash_image_bytes(bytes: &[u8]) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+
+        let mut hasher = DefaultHasher::new();
+        bytes.hash(&mut hasher);
         hasher.finish()
     }
 }
